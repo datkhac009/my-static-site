@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Future Lab UI</title>
+    <!-- Thư viện Tailwind CSS để tạo giao diện nhanh và đẹp -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+        
+        body {
+            font-family: 'Space Mono', monospace;
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='white' stroke='%2334D399' stroke-width='1.5' viewBox='0 0 24 24'%3E%3Cpath d='M12 2L12 22M2 12L22 12M12 2l-6 6M12 2l6 6'/%3E%3C/svg%3E") 12 12, auto;
+        }
+
+        .no-cursor {
+            cursor: default;
+        }
+
+        .bg-pattern {
+            background-image: radial-gradient(#34D399 1px, transparent 1px), radial-gradient(#34D399 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+        }
+
+        /* Hiệu ứng zoom-in cho intro video */
+        .video-intro-bg {
+            background-image: url('https://placehold.co/1920x1080/0A0A0A/34D399?text=Future+Lab');
+            background-size: cover;
+            background-position: center;
+            animation: zoom-in 30s linear forwards;
+        }
+
+        @keyframes zoom-in {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.2); }
+        }
+        
+        /* Hiệu ứng hologram cho AI */
+        .hologram-avatar {
+            background-image: url('https://placehold.co/150x150/065F46/D1FAE5?text=AI');
+            background-size: cover;
+            border: 2px solid #34D399;
+            box-shadow: 0 0 15px #34D399, inset 0 0 10px #34D399;
+            animation: hologram-scan 4s infinite cubic-bezier(0.65, 0.05, 0.36, 1);
+        }
+
+        @keyframes hologram-scan {
+            0%, 100% { transform: translateY(0); opacity: 1; }
+            50% { transform: translateY(-5px); opacity: 0.9; }
+        }
+
+        /* Hiệu ứng thẻ mục tiêu */
+        .objective-card {
+            transform: perspective(1000px) rotateY(0deg) scale(1);
+            transition: transform 0.5s ease, box-shadow 0.3s ease;
+        }
+        .objective-card:hover {
+            transform: perspective(1000px) rotateY(10deg) scale(1.05);
+            box-shadow: 0 10px 20px rgba(52, 211, 153, 0.5);
+        }
+
+        /* Hiệu ứng thanh tài nguyên */
+        .resource-bar {
+            transition: width 0.5s ease-in-out, background-color 0.3s ease;
+        }
+
+        /* Hiệu ứng cảnh báo cho thanh tài nguyên */
+        .resource-bar.warning {
+            animation: warning-pulse 1s infinite alternate;
+        }
+        
+        @keyframes warning-pulse {
+            from { box-shadow: 0 0 5px #EF4444; }
+            to { box-shadow: 0 0 20px #EF4444; }
+        }
+
+        /* Hiệu ứng sản xuất */
+        @keyframes production-pulse {
+            0% { box-shadow: 0 0 10px #34D399; }
+            50% { box-shadow: 0 0 20px #34D399, 0 0 30px #34D399; }
+            100% { box-shadow: 0 0 10px #34D399; }
+        }
+
+        .production-core {
+            animation: production-pulse 1.5s infinite ease-in-out;
+        }
+        
+        /* Hiệu ứng confetti cho màn hình kết thúc */
+        .confetti-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00; /* Default color */
+            animation: fall 5s linear forwards;
+            opacity: 0;
+        }
+        
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotateZ(180deg);
+                opacity: 1;
+            }
+        }
+        
+        /* Hiệu ứng loading */
+        .loading-dot {
+            animation: bounce 1s infinite;
+        }
+        .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        /* Hiệu ứng thông báo sản xuất */
+        .production-message {
+            animation: fade-in-out 2s forwards;
+        }
+        
+        @keyframes fade-in-out {
+            0% { opacity: 0; transform: translateY(20px); }
+            20% { opacity: 1; transform: translateY(0); }
+            80% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
+        
+        /* Đảm bảo màn hình gameplay và kết thúc chiếm trọn màn hình */
+        .full-screen {
+            width: 100vw;
+            height: 100vh;
+            left: 0;
+            top: 0;
+        }
+        
+        /* Cố vấn AI */
+        .ai-advisor {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            z-index: 50;
+            display: flex;
+            align-items: flex-end;
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-green-300 overflow-hidden font-mono flex items-center justify-center h-screen no-cursor">
+    
+    <!-- Container chính cho toàn bộ giao diện game -->
+    <div id="game-container" class="relative w-full h-full p-4 flex items-center justify-center transition-all duration-500">
+
+        <!-- Màn hình video intro mới -->
+        <div id="video-intro-screen" class="absolute inset-0 z-50 flex items-center justify-center text-center text-white bg-gray-900 video-intro-bg">
+            <div class="absolute inset-0 bg-black/70"></div>
+            <div class="relative z-10 p-8 space-y-4">
+                <h1 class="text-3xl md:text-5xl font-bold animate-fade-in">Chào mừng bạn đến với Future Lab</h1>
+                <p class="text-xl md:text-2xl text-gray-300">Nơi chúng tôi biến những ý tưởng thành hiện thực và kiến tạo tương lai.</p>
+                <div class="text-sm text-gray-400 mt-4">Thời gian còn lại: <span id="video-timer">30</span>s</div>
+            </div>
+            <button id="skip-intro-button" class="absolute bottom-8 right-8 p-3 px-6 bg-green-600 hover:bg-green-700 text-white font-bold rounded-full shadow-lg transition-colors z-20">
+                Bỏ qua giới thiệu >>
+            </button>
+        </div>
+
+        <!-- Màn hình 1: Nhập vai mở đầu (Free-roam) -->
+        <div id="intro-screen" class="absolute inset-0 bg-gray-900 flex flex-col items-center justify-center p-8 transition-opacity duration-1000 ease-in-out opacity-100 z-50 hidden">
+            <header class="absolute top-4 left-4 text-sm md:text-base text-green-500 flex items-center space-x-2">
+                <svg class="w-6 h-6 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 2a8 8 0 100 16 8 8 0 000-16zM5 10a5 5 0 1110 0 5 5 0 01-10 0z"></path>
+                </svg>
+                <span>Nhà máy Tương lai | Sự kiện Future Lab</span>
+            </header>
+            
+            <div id="intro-content" class="text-center transition-opacity duration-500 ease-in-out opacity-0">
+                <h1 class="text-2xl md:text-4xl font-bold mb-4 animate-fade-in">Chào mừng đến với Trạm Vận hành Tương lai</h1>
+                <p class="text-base md:text-lg text-gray-400 max-w-2xl">
+                    Chào mừng bạn đến với nhà máy. Tại đây, bạn sẽ được trải nghiệm vai trò của một người điều hành, đưa ra các quyết định quan trọng cho tương lai của ngành.
+                </p>
+            </div>
+
+            <div id="ai-container" class="absolute bottom-4 right-4 flex items-center space-x-4 transition-opacity duration-500 ease-in-out opacity-0">
+                <div class="hologram-avatar w-16 h-16 rounded-full flex-shrink-0 animate-pulse"></div>
+                <div id="ai-bubble" class="bg-green-800/50 backdrop-blur-sm border border-green-700 rounded-xl p-4 max-w-xs transition-all duration-500 ease-in-out">
+                    <p class="text-sm">Hãy cùng tôi khám phá các khu vực quan trọng của nhà máy.</p>
+                </div>
+            </div>
+
+            <div id="intro-buttons" class="absolute bottom-16 flex space-x-4 z-10">
+                <button id="skip-tour-button" class="p-4 rounded-full bg-red-600 text-white font-bold text-lg shadow-lg hover:bg-red-700 transition-all duration-300 ease-in-out">
+                    Bỏ qua
+                </button>
+                <button id="start-tour-button" class="p-4 rounded-full bg-gradient-to-r from-green-600 to-green-800 text-white font-bold text-lg shadow-lg hover:from-green-700 hover:to-green-900 transition-all duration-300 ease-in-out">
+                    Tham quan
+                </button>
+                <button id="continue-button" class="p-4 rounded-full bg-gradient-to-r from-green-600 to-green-800 text-white font-bold text-lg shadow-lg hover:from-green-700 hover:to-green-900 transition-all duration-300 ease-in-out hidden">
+                    Tiếp tục
+                </button>
+            </div>
+        </div>
+
+        <!-- Màn hình 2: Giải thích Cơ chế Game -->
+        <div id="explanation-screen" class="hidden absolute inset-0 bg-gray-900 flex flex-col items-center justify-center p-8 text-center z-50">
+            <h1 class="text-2xl md:text-4xl font-bold mb-6 text-green-300 animate-fade-in">Cơ chế Vận hành & Đánh giá</h1>
+            <div class="text-left text-base md:text-lg text-gray-300 max-w-2xl animate-fade-in delay-200 space-y-4">
+                <p>Mục tiêu của bạn là **đạt 100% tiến độ** trước khi hết giờ (5 phút). Hệ thống sẽ đánh giá hiệu quả của bạn dựa trên 3 yếu tố:</p>
+                <ul class="list-disc list-inside space-y-2 mb-4">
+                    <li>**Chỉ số mục tiêu chính:** Tiến độ đạt được của mục tiêu chiến lược bạn đã chọn.</li>
+                    <li>**Chỉ số cân bằng phụ:** Mức độ ổn định của 3 chỉ số tài nguyên (Dầu thô, Công suất, Nhân lực).</li>
+                    <li>**Tốc độ phản ứng:** Tốc độ bạn xử lý các sự kiện ngẫu nhiên trong game.</li>
+                </ul>
+                <p class="font-bold text-green-300">Điều kiện Thắng/Thua:</p>
+                <ul class="list-disc list-inside space-y-2 mb-4">
+                    <li class="text-green-400">**Thắng:** Hoàn thành **100% mục tiêu** trước khi hết 5 phút.</li>
+                    <li class="text-red-400">**Thua:** Bất kỳ chỉ số tài nguyên nào về **0%** hoặc **hết giờ** mà chưa đạt 100% mục tiêu.</li>
+                </ul>
+                <p class="font-bold text-green-300">Hạng xếp loại:</p>
+                <ul class="list-disc list-inside space-y-2 mb-4">
+                    <li>**S:** Huyền thoại ngành lọc dầu</li>
+                    <li>**A:** Chuyên gia vận hành</li>
+                    <li>**B:** Quản lý tiềm năng</li>
+                    <li>**C:** Nhân viên mới</li>
+                </ul>
+            </div>
+            <button id="start-game-button" class="mt-12 p-4 rounded-full bg-gradient-to-r from-green-600 to-green-800 text-white font-bold text-lg shadow-lg hover:from-green-700 hover:to-green-900 transition-all duration-300 ease-in-out">
+                Bắt đầu
+            </button>
+        </div>
+
+
+        <!-- Màn hình 3: Chọn mục tiêu -->
+        <div id="objective-screen" class="hidden absolute inset-0 bg-gray-900 flex flex-col items-center justify-center p-8">
+            <h1 class="text-2xl md:text-4xl font-bold mb-8 text-green-300 animate-fade-in">Chọn Mục Tiêu Chiến Lược của bạn</h1>
+            <p id="ai-objective-intro" class="text-center text-lg md:text-xl mb-12 text-gray-400 max-w-3xl animate-fade-in delay-200">
+                Chúng ta phải đặt ra một mục tiêu rõ ràng. Hãy chọn một trong ba mục tiêu sau để bắt đầu vận hành.
+            </p>
+            <div class="flex flex-col md:flex-row space-y-8 md:space-y-0 md:space-x-8">
+                <!-- Thẻ Lợi nhuận -->
+                <div id="profit-card" class="objective-card w-72 h-80 bg-gray-800 rounded-2xl p-6 flex flex-col items-center justify-center text-center border-2 border-green-600/50 hover:border-green-400 cursor-pointer transition-all duration-300 ease-in-out">
+                    <span class="text-6xl mb-4 transform scale-100 transition-transform duration-300">💰</span>
+                    <h2 class="text-2xl font-bold text-green-300">Lợi nhuận</h2>
+                    <p class="mt-2 text-sm text-gray-400">Tối đa hóa doanh thu, tối ưu hóa chi phí sản xuất.</p>
+                </div>
+                <!-- Thẻ Quốc phòng -->
+                <div id="defense-card" class="objective-card w-72 h-80 bg-gray-800 rounded-2xl p-6 flex flex-col items-center justify-center text-center border-2 border-green-600/50 hover:border-green-400 cursor-pointer transition-all duration-300 ease-in-out">
+                    <span class="text-6xl mb-4 transform scale-100 transition-transform duration-300">🛡</span>
+                    <h2 class="text-2xl font-bold text-green-300">Quốc phòng</h2>
+                    <p class="mt-2 text-sm text-gray-400">Đảm bảo nguồn cung ổn định cho các ngành công nghiệp an ninh quốc gia.</p>
+                </div>
+                <!-- Thẻ An toàn -->
+                <div id="safety-card" class="objective-card w-72 h-80 bg-gray-800 rounded-2xl p-6 flex flex-col items-center justify-center text-center border-2 border-green-600/50 hover:border-green-400 cursor-pointer transition-all duration-300 ease-in-out">
+                    <span class="text-6xl mb-4 transform scale-100 transition-transform duration-300">⚠</span>
+                    <h2 class="text-2xl font-bold text-green-300">An toàn</h2>
+                    <p class="mt-2 text-sm text-gray-400">Ưu tiên sức khỏe cộng đồng, giảm thiểu rủi ro môi trường.</p>
+                </div>
+            </div>
+            <button id="confirm-objective" class="mt-8 p-4 rounded-full bg-gradient-to-r from-green-600 to-green-800 text-white font-bold text-lg shadow-lg hover:from-green-700 hover:to-green-900 transition-all duration-300 ease-in-out scale-0 opacity-0">
+                Xác nhận mục tiêu
+            </button>
+        </div>
+
+        <!-- Màn hình 4: Quản lý tài nguyên & Gameplay chính -->
+        <div id="game-screen" class="hidden absolute full-screen bg-gray-950 bg-pattern flex flex-col justify-between p-8">
+             <!-- Thông báo sản xuất hoàn thành -->
+            <div id="production-status-message" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-8 py-4 bg-green-800/80 backdrop-blur-sm border border-green-700 rounded-2xl text-3xl font-bold text-green-300 text-center shadow-2xl opacity-0 hidden">
+                Chu kỳ sản xuất hoàn thành!
+            </div>
+            <header class="flex justify-between items-start mb-4">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-green-700/50 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 2a8 8 0 100 16 8 8 0 000-16zM5 10a5 5 0 1110 0 5 5 0 01-10 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-400">Mục tiêu:</span>
+                        <div class="text-xl font-bold text-green-300 flex items-center">
+                            <span id="game-objective-icon" class="mr-2"></span>
+                            <span id="game-objective-text"></span>
+                            <span id="objective-progress" class="ml-4 text-green-500">0%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span class="text-sm text-gray-400">Thời gian còn lại:</span>
+                    <div id="game-timer" class="text-3xl font-bold text-red-500">05:00</div>
+                </div>
+            </header>
+
+            <main class="flex-grow flex flex-col justify-center items-center">
+                <div class="w-full max-w-4xl space-y-8">
+                    <!-- Thanh Dầu thô -->
+                    <div class="flex items-center space-x-4">
+                        <span class="w-28 text-lg font-bold text-yellow-300">Dầu thô</span>
+                        <div class="flex-grow bg-gray-800 rounded-full h-8 overflow-hidden">
+                            <div id="oil-bar" class="resource-bar bg-yellow-500 h-full" style="width: 50%;"></div>
+                        </div>
+                        <span id="oil-level" class="w-20 text-right text-lg text-yellow-300">50%</span>
+                    </div>
+                    <!-- Thanh Công suất -->
+                    <div class="flex items-center space-x-4">
+                        <span class="w-28 text-lg font-bold text-blue-300">Công suất</span>
+                        <div class="flex-grow bg-gray-800 rounded-full h-8 overflow-hidden">
+                            <div id="power-bar" class="resource-bar bg-blue-500 h-full" style="width: 50%;"></div>
+                        </div>
+                        <span id="power-level" class="w-20 text-right text-lg text-blue-300">50%</span>
+                    </div>
+                    <!-- Thanh Nhân lực -->
+                    <div class="flex items-center space-x-4">
+                        <span class="w-28 text-lg font-bold text-orange-300">Nhân lực</span>
+                        <div class="flex-grow bg-gray-800 rounded-full h-8 overflow-hidden">
+                            <div id="labor-bar" class="resource-bar bg-orange-500 h-full" style="width: 50%;"></div>
+                        </div>
+                        <span id="labor-level" class="w-20 text-right text-lg text-orange-300">50%</span>
+                    </div>
+
+                    <!-- Thanh Sản xuất -->
+                    <div class="flex items-center space-x-4 mt-8">
+                        <div class="w-28 text-lg font-bold text-green-300 flex items-center justify-end space-x-2">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500 production-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Sản lượng</span>
+                        </div>
+                        <div class="flex-grow bg-gray-800 rounded-full h-8 overflow-hidden">
+                            <div id="production-bar" class="resource-bar bg-green-500 h-full" style="width: 0%;"></div>
+                        </div>
+                        <span id="production-level" class="w-20 text-right text-lg text-green-300">0%</span>
+                    </div>
+
+                </div>
+            </main>
+
+            <footer class="flex justify-center items-center space-x-4 mt-8">
+                <button id="boost-production" class="p-4 rounded-full bg-gradient-to-r from-green-600 to-green-800 hover:from-green-700 hover:to-green-900 transition-colors text-white font-bold w-52">
+                    Tăng cường sản xuất
+                </button>
+                <button id="optimize-flow" class="p-4 rounded-full bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 transition-colors text-white font-bold w-52">
+                    Tối ưu hóa quy trình
+                </button>
+            </footer>
+
+            <!-- Popup sự kiện YES/NO -->
+            <div id="event-popup" class="hidden absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+                <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border-2 border-green-500 w-11/12 md:w-1/2 max-w-xl text-center">
+                    <div id="event-icon" class="text-6xl mb-4"></div>
+                    <p id="event-question" class="text-xl md:text-2xl font-bold mb-6 text-green-300"></p>
+                    <div id="gemini-hint" class="bg-gray-700 p-4 rounded-lg mt-4 text-sm text-gray-300 hidden">
+                        <div class="flex items-center justify-center space-x-2">
+                           <span class="font-bold">Đang phân tích...</span>
+                           <div class="loading-dot w-2 h-2 rounded-full bg-green-500"></div>
+                           <div class="loading-dot w-2 h-2 rounded-full bg-green-500"></div>
+                           <div class="loading-dot w-2 h-2 rounded-full bg-green-500"></div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col space-y-4 justify-center mt-6">
+                        <button id="gemini-ask-btn" class="p-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-lg transition-colors">✨ Hỏi Cố vấn AI</button>
+                        <div class="flex space-x-4">
+                            <button id="event-yes" class="p-4 w-full rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-2xl transition-colors">YES</button>
+                            <button id="event-no" class="p-4 w-full rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-2xl transition-colors">NO</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cố vấn AI -->
+        <div id="ai-advisor-container" class="ai-advisor hidden">
+            <div id="ai-advisor-bubble" class="bg-green-800/50 backdrop-blur-sm border border-green-700 rounded-xl p-4 max-w-xs transition-all duration-500 ease-in-out mr-4">
+                <p id="ai-advisor-text" class="text-sm"></p>
+            </div>
+            <div class="hologram-avatar w-16 h-16 rounded-full flex-shrink-0 animate-pulse"></div>
+        </div>
+
+        <!-- Màn hình 5: Kết thúc (outro) mới -->
+        <div id="end-screen" class="hidden absolute full-screen bg-gray-950 flex flex-col items-center justify-center p-8 z-40">
+            <div class="confetti-container"></div>
+            
+            <!-- Container cho nội dung kết thúc game -->
+            <div id="end-game-content" class="text-center w-full max-w-4xl">
+                <h1 id="end-title" class="text-4xl md:text-6xl font-bold text-green-300 mb-8 animate-fade-in delay-500">Kết quả vận hành</h1>
+                
+                <div class="flex flex-col items-center space-y-4 mb-12">
+                    <p class="text-lg text-gray-400">Bạn đã đạt hạng:</p>
+                    <h2 id="end-rank" class="text-7xl font-bold text-green-500 animate-pulse">S</h2>
+                    <p id="end-slogan" class="text-xl text-green-400 mt-2">Huyền thoại ngành lọc dầu</p>
+                </div>
+            </div>
+
+            <!-- Container cho video outro - Ban đầu ẩn -->
+            <div id="outro-video-container" class="hidden w-full max-w-4xl text-center">
+                 <h1 class="text-4xl sm:text-5xl font-bold mb-8 animate-fade-in">Chào mừng đến với nhà máy tương lai!</h1>
+                <div class="relative overflow-hidden rounded-xl shadow-lg aspect-video">
+                    <video id="outroVideo" class="w-full h-full object-cover" muted playsinline>
+                        <source src="https://cdn.coverr.co/videos/coverr-future-city-on-mars-2964/1080p.mp4" type="video/mp4">
+                        Trình duyệt của bạn không hỗ trợ thẻ video.
+                    </video>
+                    <!-- Thanh tiến độ video -->
+                    <div class="absolute bottom-0 left-0 right-0 h-2 bg-gray-800/50">
+                        <div id="video-progress-bar" class="h-full bg-green-500 transition-all duration-100 ease-linear" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Các nút điều hướng -->
+            <div class="flex space-x-4 mt-8">
+                <button id="watch-outro" class="p-4 rounded-full bg-green-600 hover:bg-green-700 transition-colors text-white font-bold w-40">
+                    Xem Outro
+                </button>
+                <button id="play-again" class="p-4 rounded-full bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold w-40 hidden">
+                    Chơi lại
+                </button>
+            </div>
+            
+        </div>
+
+    </div>
+
+    <!-- Script Game Logic -->
+    <script>
+        const screens = {
+            videoIntro: document.getElementById('video-intro-screen'),
+            intro: document.getElementById('intro-screen'),
+            explanation: document.getElementById('explanation-screen'),
+            objective: document.getElementById('objective-screen'),
+            game: document.getElementById('game-screen'),
+            end: document.getElementById('end-screen')
+        };
+        
+        const uiElements = {
+            // Video Intro
+            videoIntroScreen: document.getElementById('video-intro-screen'),
+            skipIntroBtn: document.getElementById('skip-intro-button'),
+            videoTimerDisplay: document.getElementById('video-timer'),
+
+            // Intro Screen
+            introContent: document.getElementById('intro-content'),
+            aiContainer: document.getElementById('ai-container'),
+            introButtons: document.getElementById('intro-buttons'),
+            startTourBtn: document.getElementById('start-tour-button'),
+            skipTourBtn: document.getElementById('skip-tour-button'),
+            continueBtn: document.getElementById('continue-button'),
+            
+            // Explanation Screen
+            startGameBtn: document.getElementById('start-game-button'),
+
+            // Objective Screen
+            objectiveCards: {
+                profit: document.getElementById('profit-card'),
+                defense: document.getElementById('defense-card'),
+                safety: document.getElementById('safety-card'),
+            },
+            confirmObjectiveBtn: document.getElementById('confirm-objective'),
+            
+            // Game Screen
+            gameTimer: document.getElementById('game-timer'),
+            objectiveText: document.getElementById('game-objective-text'),
+            objectiveIcon: document.getElementById('game-objective-icon'),
+            objectiveProgress: document.getElementById('objective-progress'),
+            
+            resourceBars: {
+                oil: document.getElementById('oil-bar'),
+                power: document.getElementById('power-bar'),
+                labor: document.getElementById('labor-bar'),
+                production: document.getElementById('production-bar'),
+            },
+            resourceLevels: {
+                oil: document.getElementById('oil-level'),
+                power: document.getElementById('power-level'),
+                labor: document.getElementById('labor-level'),
+                production: document.getElementById('production-level'),
+            },
+            resourceButtons: {
+                boost: document.getElementById('boost-production'),
+                optimize: document.getElementById('optimize-flow'),
+            },
+            
+            // Event Popup
+            eventPopup: document.getElementById('event-popup'),
+            eventQuestion: document.getElementById('event-question'),
+            eventIcon: document.getElementById('event-icon'),
+            eventYes: document.getElementById('event-yes'),
+            eventNo: document.getElementById('event-no'),
+            geminiAskBtn: document.getElementById('gemini-ask-btn'),
+            geminiHint: document.getElementById('gemini-hint'),
+
+            // AI Advisor
+            aiAdvisorContainer: document.getElementById('ai-advisor-container'),
+            aiAdvisorText: document.getElementById('ai-advisor-text'),
+
+            // Production Status Message
+            productionStatusMessage: document.getElementById('production-status-message'),
+            
+            // End Screen
+            endTitle: document.getElementById('end-title'),
+            endRank: document.getElementById('end-rank'),
+            endSlogan: document.getElementById('end-slogan'),
+            endGameContent: document.getElementById('end-game-content'),
+            outroVideoContainer: document.getElementById('outro-video-container'),
+            outroVideo: document.getElementById('outroVideo'),
+            videoProgressBar: document.getElementById('video-progress-bar'),
+            watchOutroBtn: document.getElementById('watch-outro'),
+            playAgainBtn: document.getElementById('play-again'),
+        };
+
+        let gameState = {
+            screen: 'videoIntro',
+            objective: null,
+            timeRemaining: 300, // 5 phút
+            resources: { oil: 100, power: 100, labor: 100, production: 0 },
+            objectiveProgress: 0,
+            eventsHandled: 0,
+            eventTimeout: null,
+            gameLoop: null,
+            hintEnabled: true,
+            productionBoost: false,
+            boostTimer: 0,
+            activeEffects: [],
+            // Thêm các biến trạng thái mới cho các nút điều khiển
+            isBoosting: false,
+            isOptimizing: false,
+            boostCooldown: 0,
+            optimizeCooldown: 0,
+        };
+        
+        // Cấu hình game
+        const gameConfig = {
+            objectiveDescriptions: {
+                profit: "Tối đa hóa doanh thu bằng cách giữ tài nguyên ổn định.",
+                defense: "Bảo vệ tài nguyên quan trọng, đề phòng các sự kiện bất ngờ.",
+                safety: "Ưu tiên an toàn, tránh để các thanh tài nguyên vượt quá giới hạn."
+            },
+            objectiveIcons: {
+                profit: "💰",
+                defense: "🛡",
+                safety: "⚠"
+            },
+            eventList: [
+                {
+                    question: "Một lỗi hệ thống làm giảm hiệu quả sản xuất. Bạn có muốn xử lý không?",
+                    icon: "🐛",
+                    hint: {
+                        profit: "Để tối đa hóa lợi nhuận, bạn nên sửa lỗi ngay lập tức để duy trì sản xuất.",
+                        defense: "Việc xử lý lỗi sẽ giúp hệ thống ổn định, rất quan trọng cho mục tiêu quốc phòng.",
+                        safety: "Đảm bảo an toàn hệ thống là ưu tiên hàng đầu, hãy sửa lỗi."
+                    },
+                    yes: { oil: -5, power: -5, labor: -5 },
+                    no: { oil: 10, power: 10, labor: 10, effect: { type: 'passive', key: 'productionRateMultiplier', value: 0.5, duration: 20 } }
+                },
+                {
+                    question: "Tin tặc tấn công làm giảm công suất điện. Khôi phục ngay chứ?",
+                    icon: "🚨",
+                    hint: {
+                        profit: "Mất công suất sẽ ảnh hưởng đến sản xuất. Nên xử lý nhanh để tránh thiệt hại.",
+                        defense: "Tấn công mạng là mối đe dọa trực tiếp. Khôi phục ngay để bảo vệ an ninh.",
+                        safety: "Mất điện có thể gây ra rủi ro nghiêm trọng. Khôi phục công suất là cần thiết."
+                    },
+                    yes: { power: -10, labor: -5 },
+                    no: { power: -20, oil: 5 }
+                },
+                {
+                    question: "Cần tăng sản lượng để đáp ứng hợp đồng khẩn cấp. Tăng cường chứ?",
+                    icon: "🚀",
+                    hint: {
+                        profit: "Hợp đồng này rất béo bở. Tăng sản lượng sẽ tối đa hóa lợi nhuận.",
+                        defense: "Hợp đồng khẩn cấp thường liên quan đến an ninh. Cần đáp ứng để duy trì uy tín.",
+                        safety: "Tăng cường sản xuất có thể gây quá tải. Không nên mạo hiểm."
+                    },
+                    yes: { oil: -10, power: -10, labor: -10, effect: { type: 'passive', key: 'productionRateMultiplier', value: 2.0, duration: 15 } },
+                    no: { oil: 5, power: 5, labor: 5, production: -10 }
+                },
+                {
+                    question: "Rò rỉ môi trường tại khu vực xử lý. Xử lý ngay?",
+                    icon: "☣",
+                    hint: {
+                        profit: "Vi phạm môi trường có thể gây thiệt hại tài chính lớn. Nên xử lý ngay.",
+                        defense: "Sự cố này có thể ảnh hưởng đến cơ sở hạ tầng. Xử lý để đảm bảo an ninh.",
+                        safety: "Ưu tiên hàng đầu là an toàn. Hãy xử lý rò rỉ ngay lập tức."
+                    },
+                    yes: { labor: -15, oil: -5 },
+                    no: { oil: -20, power: -10 }
+                },
+            ],
+            productionBaseRate: 5,
+            resourceConsumptionBase: { oil: 0.8, power: 0.5, labor: 0.3 }, // Sửa lỗi: đặt mức tiêu thụ riêng
+            resourceRegenRate: { oil: 0.5, power: 0.5, labor: 0.5 } 
+        };
+        
+        // Hàm gọi API Gemini
+        async function getGeminiHint(prompt) {
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+            const payload = { contents: chatHistory };
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            
+            const maxRetries = 3;
+            let currentRetry = 0;
+            let delay = 1000; // 1 second
+            
+            while (currentRetry < maxRetries) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 429 && currentRetry < maxRetries - 1) {
+                            console.log(`API rate limit exceeded. Retrying in ${delay / 1000}s...`);
+                            await new Promise(res => setTimeout(res, delay));
+                            delay *= 2; // Exponential backoff
+                            currentRetry++;
+                            continue;
+                        }
+                        throw new Error(`API call failed with status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        return result.candidates[0].content.parts[0].text;
+                    }
+                } catch (error) {
+                    console.error("Lỗi khi gọi Gemini API:", error);
+                }
+                currentRetry++;
+                await new Promise(res => setTimeout(res, delay));
+            }
+            return "Xin lỗi, tôi không thể phân tích tình huống này vào lúc này. Vui lòng đưa ra quyết định của bạn.";
+        }
+        
+        // Hàm chuyển màn hình
+        function showScreen(screenName) {
+            Object.values(screens).forEach(screen => screen.classList.add('hidden'));
+            screens[screenName].classList.remove('hidden');
+        }
+
+        // --- Bước 1: Video Intro mới ---
+        function startVideoIntro() {
+            showScreen('videoIntro');
+            document.body.classList.add('no-cursor');
+            
+            let videoTimer = 30;
+            uiElements.videoTimerDisplay.textContent = videoTimer;
+            const timerInterval = setInterval(() => {
+                videoTimer--;
+                uiElements.videoTimerDisplay.textContent = videoTimer;
+                if (videoTimer <= 0) {
+                    clearInterval(timerInterval);
+                    startIntro();
+                }
+            }, 1000);
+
+            uiElements.skipIntroBtn.addEventListener('click', () => {
+                clearInterval(timerInterval);
+                startIntro();
+            });
+        }
+
+
+        // --- Bước 2: Nhập vai mở đầu ---
+        function startIntro() {
+            showScreen('intro');
+            document.body.classList.add('no-cursor');
+            
+            uiElements.introContent.classList.add('opacity-0');
+            uiElements.aiContainer.classList.add('opacity-0');
+            uiElements.startTourBtn.classList.remove('hidden');
+            uiElements.skipTourBtn.classList.remove('hidden');
+            uiElements.continueBtn.classList.add('hidden');
+            
+            uiElements.startTourBtn.removeEventListener('click', handleStartTour);
+            uiElements.skipTourBtn.removeEventListener('click', handleSkipTour);
+            uiElements.continueBtn.removeEventListener('click', handleContinue);
+
+            uiElements.startTourBtn.addEventListener('click', handleStartTour);
+            uiElements.skipTourBtn.addEventListener('click', handleSkipTour);
+        }
+
+        function handleStartTour() {
+            uiElements.introContent.classList.remove('opacity-0');
+            uiElements.aiContainer.classList.remove('opacity-0');
+
+            uiElements.startTourBtn.classList.add('hidden');
+            uiElements.skipTourBtn.classList.add('hidden');
+            uiElements.continueBtn.classList.remove('hidden');
+            
+            uiElements.continueBtn.addEventListener('click', handleContinue);
+        }
+
+        function handleSkipTour() {
+            showScreen('explanation');
+        }
+
+        function handleContinue() {
+            showScreen('explanation');
+        }
+
+        function setupExplanationScreen() {
+            uiElements.startGameBtn.addEventListener('click', () => {
+                showScreen('objective');
+            });
+        }
+        
+        // --- Bước 3: Chọn mục tiêu ---
+        function setupObjectiveScreen() {
+            let selectedObjective = null;
+
+            function selectObjective(objective) {
+                Object.values(uiElements.objectiveCards).forEach(card => {
+                    card.classList.remove('border-green-400', 'ring-4', 'ring-green-400');
+                    card.querySelector('span').classList.remove('scale-125');
+                });
+                
+                const card = uiElements.objectiveCards[objective];
+                card.classList.add('border-green-400', 'ring-4', 'ring-green-400');
+                card.querySelector('span').classList.add('scale-125');
+
+                selectedObjective = objective;
+                uiElements.confirmObjectiveBtn.classList.remove('scale-0', 'opacity-0');
+            }
+
+            uiElements.objectiveCards.profit.addEventListener('click', () => selectObjective('profit'));
+            uiElements.objectiveCards.defense.addEventListener('click', () => selectObjective('defense'));
+            uiElements.objectiveCards.safety.addEventListener('click', () => selectObjective('safety'));
+            
+            uiElements.confirmObjectiveBtn.addEventListener('click', () => {
+                if (selectedObjective) {
+                    gameState.objective = selectedObjective;
+                    startGame();
+                }
+            });
+        }
+
+        // --- Bước 4, 5: Gameplay chính, sự kiện và gợi ý AI ---
+        function startGame() {
+            showScreen('game');
+            document.body.classList.remove('no-cursor');
+            resetGameState();
+            updateUI();
+            
+            uiElements.objectiveIcon.textContent = gameConfig.objectiveIcons[gameState.objective];
+            uiElements.objectiveText.textContent = gameState.objective.charAt(0).toUpperCase() + gameState.objective.slice(1);
+            
+            gameState.gameLoop = setInterval(updateGame, 1000);
+            gameState.eventTimeout = setTimeout(triggerEvent, Math.random() * 15000 + 10000);
+            
+            uiElements.resourceButtons.boost.addEventListener('click', () => {
+                if (!gameState.isBoosting && gameState.boostCooldown === 0) {
+                    gameState.isBoosting = true;
+                    gameState.boostTimer = 15;
+                }
+            });
+            uiElements.resourceButtons.optimize.addEventListener('click', () => {
+                if (!gameState.isOptimizing && gameState.optimizeCooldown === 0) {
+                    gameState.isOptimizing = true;
+                    gameState.optimizeTimer = 15;
+                }
+            });
+        }
+
+        function resetGameState() {
+            gameState.timeRemaining = 300;
+            // Cập nhật giá trị ban đầu của tài nguyên lên 100%
+            gameState.resources = { oil: 100, power: 100, labor: 100, production: 0 };
+            gameState.objectiveProgress = 0;
+            gameState.eventsHandled = 0;
+            gameState.activeEffects = [];
+            
+            // Đặt lại các biến trạng thái và cooldown của nút
+            gameState.isBoosting = false;
+            gameState.isOptimizing = false;
+            gameState.boostTimer = 0;
+            gameState.optimizeTimer = 0;
+            gameState.boostCooldown = 0;
+            gameState.optimizeCooldown = 0;
+
+            gameConfig.productionBaseRate = 5;
+            gameConfig.resourceConsumptionBase = { oil: 0.8, power: 0.5, labor: 0.3 };
+            
+            // Xóa các event listener cũ để tránh lặp lại
+            uiElements.resourceButtons.boost.replaceWith(uiElements.resourceButtons.boost.cloneNode(true));
+            uiElements.resourceButtons.optimize.replaceWith(uiElements.resourceButtons.optimize.cloneNode(true));
+            // Cập nhật lại các tham chiếu
+            uiElements.resourceButtons.boost = document.getElementById('boost-production');
+            uiElements.resourceButtons.optimize = document.getElementById('optimize-flow');
+            
+            // Reset nút
+            uiElements.resourceButtons.boost.textContent = 'Tăng cường sản xuất';
+            uiElements.resourceButtons.boost.disabled = false;
+            uiElements.resourceButtons.optimize.textContent = 'Tối ưu hóa quy trình';
+            uiElements.resourceButtons.optimize.disabled = false;
+        }
+        
+        // Hàm mới: Kiểm tra điều kiện thua cuộc
+        function checkGameOverConditions() {
+            if (gameState.resources.oil <= 0 || gameState.resources.power <= 0 || gameState.resources.labor <= 0) {
+                endGame(false);
+                return true;
+            }
+            return false;
+        }
+
+        function updateUI() {
+            const minutes = Math.floor(gameState.timeRemaining / 60).toString().padStart(2, '0');
+            const seconds = (gameState.timeRemaining % 60).toString().padStart(2, '0');
+            uiElements.gameTimer.textContent = `${minutes}:${seconds}`;
+
+            Object.keys(gameState.resources).forEach(resource => {
+                let level = Math.max(0, Math.min(100, gameState.resources[resource]));
+                uiElements.resourceBars[resource].style.width = `${level}%`;
+                uiElements.resourceLevels[resource].textContent = `${level.toFixed(0)}%`;
+                
+                if (level < 20) {
+                    uiElements.resourceBars[resource].classList.add('warning');
+                } else {
+                    uiElements.resourceBars[resource].classList.remove('warning');
+                }
+                
+                if (resource === 'oil') {
+                    uiElements.resourceBars[resource].style.backgroundColor = level < 20 ? '#EF4444' : '#FBBF24';
+                } else if (resource === 'power') {
+                    uiElements.resourceBars[resource].style.backgroundColor = level < 20 ? '#EF4444' : '#60A5FA';
+                } else if (resource === 'labor') {
+                    uiElements.resourceBars[resource].style.backgroundColor = level < 20 ? '#EF4444' : '#F97316';
+                }
+            });
+
+            uiElements.objectiveProgress.textContent = `${gameState.objectiveProgress}%`;
+            
+            // Cập nhật trạng thái nút
+            if (gameState.isBoosting) {
+                uiElements.resourceButtons.boost.textContent = `Đang tăng cường...`;
+                uiElements.resourceButtons.boost.disabled = true;
+            } else if (gameState.boostCooldown > 0) {
+                uiElements.resourceButtons.boost.textContent = `Tăng cường (${gameState.boostCooldown}s)`;
+                uiElements.resourceButtons.boost.disabled = true;
+            } else {
+                uiElements.resourceButtons.boost.textContent = 'Tăng cường sản xuất';
+                uiElements.resourceButtons.boost.disabled = false;
+            }
+            
+            if (gameState.isOptimizing) {
+                uiElements.resourceButtons.optimize.textContent = 'Đang tối ưu...';
+                uiElements.resourceButtons.optimize.disabled = true;
+            } else if (gameState.optimizeCooldown > 0) {
+                uiElements.resourceButtons.optimize.textContent = `Tối ưu hóa (${gameState.optimizeCooldown}s)`;
+                uiElements.resourceButtons.optimize.disabled = true;
+            } else {
+                uiElements.resourceButtons.optimize.textContent = 'Tối ưu hóa quy trình';
+                uiElements.resourceButtons.optimize.disabled = false;
+            }
+        }
+        
+        function updateGame() {
+            try {
+                if (checkGameOverConditions()) {
+                    return;
+                }
+
+                gameState.timeRemaining--;
+
+                // Xử lý các hiệu ứng đang hoạt động
+                const effectsToRemove = [];
+                let productionMultiplier = 1;
+                let consumptionMultiplier = { oil: 1, power: 1, labor: 1 };
+
+                for (const effect of gameState.activeEffects) {
+                    switch(effect.key) {
+                        case 'productionRateMultiplier':
+                            productionMultiplier *= effect.value;
+                            break;
+                        case 'oilConsumptionMultiplier':
+                            consumptionMultiplier.oil *= effect.value;
+                            break;
+                        case 'powerConsumptionMultiplier':
+                            consumptionMultiplier.power *= effect.value;
+                            break;
+                        case 'laborConsumptionMultiplier':
+                            consumptionMultiplier.labor *= effect.value;
+                            break;
+                    }
+                    effect.duration--;
+                    if (effect.duration <= 0) {
+                        effectsToRemove.push(effect);
+                    }
+                }
+                gameState.activeEffects = gameState.activeEffects.filter(effect => effect.duration > 0);
+                
+                // Xử lý nút tăng cường
+                if (gameState.isBoosting) {
+                    productionMultiplier *= 2;
+                    consumptionMultiplier.power *= 1.5;
+                    consumptionMultiplier.labor *= 1.5;
+                    gameState.boostTimer--;
+                    if (gameState.boostTimer <= 0) {
+                        gameState.isBoosting = false;
+                        gameState.boostCooldown = 30; // 30s cooldown
+                    }
+                }
+
+                // Xử lý nút tối ưu
+                if (gameState.isOptimizing) {
+                    consumptionMultiplier.oil *= 0.5;
+                    consumptionMultiplier.power *= 0.8;
+                    gameState.optimizeTimer--;
+                    if (gameState.optimizeTimer <= 0) {
+                        gameState.isOptimizing = false;
+                        gameState.optimizeCooldown = 30; // 30s cooldown
+                    }
+                }
+
+                // Giảm cooldown
+                if (gameState.boostCooldown > 0) { gameState.boostCooldown--; }
+                if (gameState.optimizeCooldown > 0) { gameState.optimizeCooldown--; }
+
+                let currentProductionRate = gameConfig.productionBaseRate * productionMultiplier;
+                
+                // Tiêu thụ tài nguyên
+                gameState.resources.oil = Math.max(0, gameState.resources.oil - gameConfig.resourceConsumptionBase.oil * consumptionMultiplier.oil + gameConfig.resourceRegenRate.oil);
+                gameState.resources.power = Math.max(0, gameState.resources.power - gameConfig.resourceConsumptionBase.power * consumptionMultiplier.power + gameConfig.resourceRegenRate.power);
+                gameState.resources.labor = Math.max(0, gameState.resources.labor - gameConfig.resourceConsumptionBase.labor * consumptionMultiplier.labor + gameConfig.resourceRegenRate.labor);
+                
+                if (gameState.resources.oil > 0 && gameState.resources.power > 0 && gameState.resources.labor > 0) {
+                    gameState.resources.production += currentProductionRate;
+                } else {
+                    gameState.resources.production = 0;
+                }
+
+                if (gameState.resources.production >= 100) {
+                    gameState.objectiveProgress = Math.min(100, gameState.objectiveProgress + 10);
+                    gameState.resources.production = 0;
+
+                    uiElements.productionStatusMessage.classList.remove('hidden');
+                    uiElements.productionStatusMessage.classList.remove('opacity-0');
+                    uiElements.productionStatusMessage.classList.add('production-message');
+                    setTimeout(() => {
+                        uiElements.productionStatusMessage.classList.add('hidden');
+                        uiElements.productionStatusMessage.classList.remove('production-message');
+                    }, 2000);
+                }
+                
+                updateUI();
+                
+                if (gameState.objectiveProgress >= 100) {
+                    endGame(true);
+                } else if (gameState.timeRemaining <= 0) {
+                    endGame(false);
+                }
+            } catch (e) {
+                console.error("Lỗi trong vòng lặp game:", e);
+                clearInterval(gameState.gameLoop);
+            }
+        }
+        
+        function adjustResource(resource, amount) {
+            gameState.resources[resource] = Math.max(0, Math.min(100, gameState.resources[resource] + amount));
+            updateUI();
+        }
+
+        function triggerEvent() {
+            clearInterval(gameState.gameLoop);
+            
+            const eventData = gameConfig.eventList[Math.floor(Math.random() * gameConfig.eventList.length)];
+            uiElements.eventIcon.textContent = eventData.icon;
+            uiElements.eventQuestion.textContent = eventData.question;
+            
+            // Hiển thị cố vấn AI với gợi ý phù hợp
+            uiElements.aiAdvisorContainer.classList.remove('hidden');
+            uiElements.aiAdvisorText.textContent = eventData.hint[gameState.objective];
+
+            // Ẩn hint Gemini cũ và hiện popup
+            uiElements.geminiHint.classList.add('hidden');
+            uiElements.eventPopup.classList.remove('hidden');
+            
+            // Xóa các event listener cũ
+            uiElements.eventYes.replaceWith(uiElements.eventYes.cloneNode(true));
+            uiElements.eventNo.replaceWith(uiElements.eventNo.cloneNode(true));
+            uiElements.geminiAskBtn.replaceWith(uiElements.geminiAskBtn.cloneNode(true));
+            
+            // Cập nhật lại các tham chiếu
+            uiElements.eventYes = document.getElementById('event-yes');
+            uiElements.eventNo = document.getElementById('event-no');
+            uiElements.geminiAskBtn = document.getElementById('gemini-ask-btn');
+            
+            // Xử lý nút Hỏi Gemini
+            uiElements.geminiAskBtn.addEventListener('click', async () => {
+                uiElements.geminiHint.classList.remove('hidden');
+                uiElements.geminiHint.innerHTML = `<div class="flex items-center justify-center space-x-2">
+                    <span class="font-bold">Đang phân tích...</span>
+                    <div class="loading-dot w-2 h-2 rounded-full bg-green-500"></div>
+                    <div class="loading-dot w-2 h-2 rounded-full bg-green-500"></div>
+                    <div class="loading-dot w-2 h-2 rounded-full bg-green-500"></div>
+                </div>`;
+                
+                const prompt = `Bạn là một AI cố vấn cho người quản lý nhà máy lọc dầu tương lai. Người chơi đã chọn mục tiêu là "${gameState.objective}". Hiện tại có một sự kiện bất ngờ: "${eventData.question}". Hãy phân tích ngắn gọn tình huống này và đưa ra lời khuyên chiến lược cho người chơi. Giải thích tại sao chọn YES hoặc NO lại phù hợp với mục tiêu của họ, nhưng không nói thẳng đáp án. Viết bằng tiếng Việt.`;
+                const geminiResponse = await getGeminiHint(prompt);
+                
+                uiElements.geminiHint.innerHTML = `<p>${geminiResponse}</p>`;
+            });
+
+            const handleEventChoice = (choice) => {
+                const choiceData = eventData[choice];
+                if (choiceData) {
+                    Object.keys(choiceData).forEach(key => {
+                        if (key !== 'effect' && key !== 'duration' && key !== 'key2' && key !== 'value2' && key !== 'key3' && key !== 'value3') {
+                            adjustResource(key, choiceData[key]);
+                        }
+                    });
+
+                    if (choiceData.effect) {
+                        gameState.activeEffects.push(choiceData.effect);
+                    }
+                    if (choiceData.key2) {
+                        adjustResource(choiceData.key2, choiceData.value2);
+                    }
+                    if (choiceData.key3) {
+                        adjustResource(choiceData.key3, choiceData.value3);
+                    }
+                }
+                
+                gameState.eventsHandled++;
+                
+                uiElements.eventPopup.classList.add('hidden');
+                uiElements.aiAdvisorContainer.classList.add('hidden'); // Ẩn cố vấn AI sau khi chọn
+                
+                if (!checkGameOverConditions()) {
+                    gameState.gameLoop = setInterval(updateGame, 1000);
+                    gameState.eventTimeout = setTimeout(triggerEvent, Math.random() * 15000 + 10000);
+                }
+            };
+            
+            const yesHandler = () => handleEventChoice('yes');
+            const noHandler = () => handleEventChoice('no');
+
+            uiElements.eventYes.addEventListener('click', yesHandler);
+            uiElements.eventNo.addEventListener('click', noHandler);
+        }
+
+        // --- Bước 6: Kết thúc ---
+        function calculateFinalScore() {
+            // Điểm mục tiêu chính: 50% trọng số
+            const objectiveScore = gameState.objectiveProgress * 0.5;
+            
+            // Điểm cân bằng tài nguyên: 40% trọng số (lấy trung bình cộng 3 chỉ số)
+            const resourceBalanceScore = (Math.max(0, gameState.resources.oil) + Math.max(0, gameState.resources.power) + Math.max(0, gameState.resources.labor)) / 3 * 0.4;
+            
+            // Điểm tốc độ phản ứng: 10% trọng số (mỗi sự kiện 5 điểm, tối đa 2 sự kiện)
+            const reactionSpeedScore = Math.min(gameState.eventsHandled, 2) * 5;
+            
+            const finalScore = objectiveScore + resourceBalanceScore + reactionSpeedScore;
+            return finalScore;
+        }
+        
+        function getRank(score) {
+            if (score >= 90) return 'S';
+            if (score >= 70) return 'A';
+            if (score >= 50) return 'B';
+            return 'C';
+        }
+
+        function getSlogan(rank) {
+            switch (rank) {
+                case 'S': return 'Huyền thoại ngành lọc dầu';
+                case 'A': return 'Chuyên gia vận hành';
+                case 'B': return 'Quản lý tiềm năng';
+                case 'C': return 'Nhân viên mới';
+                default: return '';
+            }
+        }
+        
+        function endGame(didWin) {
+            clearInterval(gameState.gameLoop);
+            clearTimeout(gameState.eventTimeout);
+            showScreen('end');
+            
+            // Ẩn nút xem outro và chơi lại
+            uiElements.watchOutroBtn.classList.remove('hidden');
+            uiElements.playAgainBtn.classList.add('hidden');
+            
+            const finalScore = calculateFinalScore();
+            const rank = getRank(finalScore);
+            let slogan = getSlogan(rank);
+
+            // Cập nhật giao diện kết thúc
+            uiElements.endTitle.textContent = didWin ? "Kết quả vận hành" : "Thua cuộc!";
+            uiElements.endTitle.classList.remove(didWin ? 'text-red-500' : 'text-green-300');
+            uiElements.endTitle.classList.add(didWin ? 'text-green-300' : 'text-red-500');
+
+            uiElements.endRank.textContent = rank;
+            uiElements.endRank.classList.remove('text-green-500', 'text-red-500', 'animate-pulse');
+            uiElements.endRank.classList.add(didWin ? 'text-green-500' : 'text-red-500');
+            if (didWin) {
+                uiElements.endRank.classList.add('animate-pulse');
+            }
+            
+            const resourcesAbove70 = [
+                gameState.resources.oil,
+                gameState.resources.power,
+                gameState.resources.labor
+            ].filter(r => r > 70).length;
+
+            if (didWin && gameState.objectiveProgress === 100 && resourcesAbove70 >= 2) {
+                slogan = "Người điều hành hoàn hảo!";
+            } else if (!didWin) {
+                 slogan += " (Thua cuộc)";
+            }
+
+            uiElements.endSlogan.textContent = slogan;
+            uiElements.endSlogan.classList.remove('text-green-400', 'text-gray-400');
+            uiElements.endSlogan.classList.add(didWin ? 'text-green-400' : 'text-gray-400');
+            
+            if (rank === 'S' || slogan === "Người điều hành hoàn hảo!") {
+                createConfetti();
+            }
+
+            // Xử lý các nút trên màn hình kết thúc
+            uiElements.watchOutroBtn.addEventListener('click', showOutroVideo);
+            uiElements.playAgainBtn.addEventListener('click', () => {
+                window.location.reload();
+            });
+        }
+
+        function showOutroVideo() {
+            uiElements.endGameContent.classList.add('hidden');
+            uiElements.watchOutroBtn.classList.add('hidden');
+            
+            // Hiển thị container video và nút chơi lại
+            uiElements.outroVideoContainer.classList.remove('hidden');
+            uiElements.playAgainBtn.classList.remove('hidden');
+            uiElements.outroVideo.play();
+            
+            const videoDuration = 10; // Đặt thời gian video là 10 giây
+            let elapsedTime = 0;
+            const updateRate = 100; // Cập nhật mỗi 100ms
+            
+            // Cập nhật thanh tiến độ video
+            const videoProgressInterval = setInterval(() => {
+                elapsedTime += updateRate / 1000;
+                const progress = (elapsedTime / videoDuration) * 100;
+                uiElements.videoProgressBar.style.width = `${progress}%`;
+                
+                if (elapsedTime >= videoDuration) {
+                    clearInterval(videoProgressInterval);
+                    uiElements.outroVideo.pause();
+                    uiElements.outroVideo.currentTime = 0;
+                }
+            }, updateRate);
+        }
+
+        function createConfetti() {
+            const container = document.querySelector('.confetti-container');
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = `${Math.random() * 100}vw`;
+                confetti.style.top = `${Math.random() * -20}vh`;
+                confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                confetti.style.animationDelay = `${Math.random() * 2}s`;
+                confetti.style.animationDuration = `${Math.random() * 3 + 2}s`;
+                container.appendChild(confetti);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            startVideoIntro();
+            setupExplanationScreen();
+            setupObjectiveScreen();
+        });
+    </script>
+</body>
+</html>
